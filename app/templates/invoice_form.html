@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <form method="post" action="/invoice/new" id="invoiceForm">
+    <header class="hdr">
+      <div>
+        <h2>M Hamid Traders</h2>
+        <p>Jamia Islamia Road Iqbal Nagar</p>
+        <p>Rahim Yar Khan 64200</p>
+        <p>Phone: +923136557899</p>
+      </div>
+      <div class="right">
+       
+        <label>Date:
+          <input type="date" name="invoice_date" value="{{ (invoice.date if invoice else None) | default('', true) | string }}">
+        </label>
+        <label>Invoice #:
+          <input type="text" name="invoice_no" placeholder="Auto" />
+        </label>
+        <label>Salesman:
+          <input type="text" name="salesman" value="">
+        </label>
+      </div>
+    </header>
+
+    <section class="billto">
+      <label>BILL TO:
+        <input type="text" name="customer_name" required placeholder="">
+      </label>
+      <label>Address:
+        <input type="text" name="address" placeholder="">
+      </label>
+    </section>
+
+    <table class="lines" id="lines">
+      <thead>
+        <tr>
+          <th style="width:60px;">ITEM #</th>
+          <th>DESCRIPTION</th>
+          <th style="width:80px;">QTY</th>
+          <th style="width:90px;">BONUS</th>
+          <th style="width:120px;">UNIT PRICE</th>
+          <th style="width:140px;">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- first row -->
+        <tr>
+          <td><input type="number" name="item_no" value="1" min="1"></td>
+          <td><input type="text" name="description" placeholder="" required></td>
+          <td><input type="number" name="qty" value="0" min="0" oninput="recalc()"></td>
+          <td><input type="number" name="bonus" value="0" min="0"></td>
+          <td><input type="number" step="0.01" name="unit_price" value="0" min="0" oninput="recalc()"></td>
+          <td><input type="number" step="0.01" name="line_total" value="0" readonly></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" class="muted"></td>
+          <td id="sum_qty">0</td>
+          <td id="sum_bonus">0</td>
+          <td class="muted" style="text-align:right;">TOTAL</td>
+          <td><input type="number" step="0.01" id="subtotal" name="subtotal" value="0" readonly></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="controls">
+      <button type="button" onclick="addLine()">+ Add Row</button>
+      <div class="totals">
+        <label>Tax (%):
+          <input type="number" step="0.01" id="tax_rate" name="tax_rate" value="15" oninput="recalc()">
+        </label>
+        <label>Advance Tax:
+          <input type="number" step="0.01" id="adv_tax" name="adv_tax" value="0" oninput="recalc()">
+        </label>
+        <label>Discount:
+          <input type="number" step="0.01" id="discount" name="discount" value="0" oninput="recalc()">
+        </label>
+        <label>Net Amount:
+          <input type="number" step="0.01" id="net_amount" name="net_amount" value="0" readonly>
+        </label>
+      </div>
+    </div>
+
+    <section class="offers">
+      <p><b>3% DISCOUNT APPLIED ON ALL SKU'S</b></p>
+  
+    </section>
+
+    <section class="bank">
+      <div>
+        <b></b><br>
+        <br>
+        <span></span>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="primary">Save</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </form>
+</div>
+
+<style>
+.wrap { max-width: 900px; margin: 0 auto; background:#fff; border:1px solid #222; padding:18px 22px; }
+.hdr { display:flex; justify-content:space-between; gap:24px; }
+.hdr h2 { margin:0; }
+.hdr h3 { margin:0 0 8px 0; text-align:right; }
+.hdr .right label { display:block; text-align:right; margin-bottom:6px; }
+.billto { display:flex; gap:16px; margin:14px 0; }
+.billto label { flex:1; }
+.lines { width:100%; border-collapse:collapse; }
+.lines th, .lines td { border:1px solid #333; padding:6px; }
+.lines input { width:100%; border:none; outline:none; padding:4px; }
+tfoot td { font-weight:bold; }
+.muted { color:#000; }
+.controls { display:flex; justify-content:space-between; align-items:flex-start; margin-top:10px; }
+.controls .totals label { display:block; margin-bottom:6px; text-align:right; }
+.offers { margin-top:14px; }
+.bank { margin-top:10px; border-top:1px dashed #333; padding-top:8px; display:flex; justify-content:space-between; }
+.actions { margin-top:14px; display:flex; gap:10px; }
+.primary { background:#0b69f4; color:#fff; border:none; padding:8px 14px; border-radius:6px; }
+@media print {
+  .actions, .controls button { display:none; }
+  input, select { border:none !important; }
+}
+</style>
+
+<script>
+function addLine() {
+  const tb = document.querySelector("#lines tbody");
+  const row = tb.rows.length + 1;
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input type="number" name="item_no" value="${row}" min="1"></td>
+    <td><input type="text" name="description" required></td>
+    <td><input type="number" name="qty" value="0" min="0" oninput="recalc()"></td>
+    <td><input type="number" name="bonus" value="0" min="0"></td>
+    <td><input type="number" step="0.01" name="unit_price" value="0" min="0" oninput="recalc()"></td>
+    <td><input type="number" step="0.01" name="line_total" value="0" readonly></td>
+  `;
+  tb.appendChild(tr);
+}
+
+function recalc() {
+  let subtotal = 0, sumQty = 0, sumBonus = 0;
+  document.querySelectorAll("#lines tbody tr").forEach(tr => {
+    const qty = parseFloat(tr.querySelector("input[name='qty']").value) || 0;
+    const up = parseFloat(tr.querySelector("input[name='unit_price']").value) || 0;
+    const line = qty * up;
+    tr.querySelector("input[name='line_total']").value = line.toFixed(2);
+    subtotal += line;
+    sumQty += qty;
+    sumBonus += parseFloat(tr.querySelector("input[name='bonus']").value) || 0;
+  });
+  document.getElementById("subtotal").value = subtotal.toFixed(2);
+  document.getElementById("sum_qty").textContent = sumQty;
+  document.getElementById("sum_bonus").textContent = sumBonus;
+
+  const tax_rate = parseFloat(document.getElementById("tax_rate").value) || 0;
+  const adv_tax = parseFloat(document.getElementById("adv_tax").value) || 0;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const tax_amount = subtotal * (tax_rate / 100);
+  const net = subtotal + tax_amount + adv_tax - discount;
+  document.getElementById("net_amount").value = net.toFixed(2);
+}
+recalc();
+</script>
+{% endblock %}

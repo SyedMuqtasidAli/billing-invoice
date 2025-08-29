@@ -1,0 +1,77 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 20px;
+    background: #f9f9f9;
+}
+
+.invoice-box {
+    background: white;
+    padding: 20px;
+    border: 2px solid black;
+    max-width: 900px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+}
+
+.invoice-box table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.invoice-box table th, 
+.invoice-box table td {
+    padding: 8px;
+    border: 1px solid black;
+    text-align: center;
+}
+
+.invoice-box table.heading td {
+    border: none;
+    text-align: left;
+    padding: 5px 0;
+}
+
+.title {
+    text-align: left;
+}
+
+.invoice-info {
+    text-align: right;
+}
+
+.customer-info td {
+    padding: 5px 0;
+    border: none;
+    text-align: left;
+}
+
+.invoice-table th {
+    background: #e0e0e0;
+    font-weight: bold;
+}
+
+.totals {
+    text-align: right;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.note {
+    margin-top: 40px;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.print-btn {
+    background: darkblue;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+.print-btn:hover {
+    background: navy;
+}

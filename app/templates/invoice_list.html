@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Invoices</h2>
+<a href="/invoice/new">+ New Invoice</a>
+
+<table border="1" cellpadding="6" cellspacing="0" width="100%">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Customer</th>
+      <th>Date</th>
+      <th>Subtotal (PKR)</th>
+      <th>Tax (%)</th>
+      <th>ADV Tax</th>
+      <th>Discount</th>
+      <th>Total (PKR)</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for invoice in invoices %}
+      {# --- accumulate subtotal correctly using a namespace --- #}
+      {% set ns = namespace(subtotal=0.0) %}
+      {% for item in invoice.items %}
+        {% set q = item.quantity or 0 %}
+        {% set p = item.unit_price or 0.0 %}
+        {% set ns.subtotal = ns.subtotal + (q * p) %}
+      {% endfor %}
+
+      {% set tax_rate   = invoice.tax_rate | default(16, true) %}
+      {% set adv_tax    = invoice.adv_tax  | default(0.0, true) %}
+      {% set discount   = invoice.discount | default(0.0, true) %}
+      {% set tax_amount = (ns.subtotal * tax_rate / 100.0) %}
+      {% set grand      = ns.subtotal + tax_amount + adv_tax - discount %}
+
+      <tr>
+        <td>{{ invoice.id }}</td>
+        <td>{{ invoice.customer_name }}</td>
+        <td>
+          {% if invoice.date and invoice.date.strftime is defined %}
+            {{ invoice.date.strftime('%d-%m-%Y') }}
+          {% else %}
+            {{ invoice.date }}
+          {% endif %}
+        </td>
+        <td>{{ '%.2f' % ns.subtotal }}</td>
+        <td>{{ tax_rate }}%</td>
+        <td>{{ '%.2f' % adv_tax }}</td>
+        <td>{{ '%.2f' % discount }}</td>
+        <td><strong>{{ '%.2f' % grand }}</strong></td>
+        <td><a href="/invoice/{{ invoice.id }}">View/Print</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

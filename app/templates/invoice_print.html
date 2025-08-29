@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* ==== PRINT-PERFECT A4 LAYOUT ==== */
+  @page { size: A4; margin: 16mm; }
+  @media print {
+    .no-print { display: none !important; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .invoice-box { box-shadow: none; }
+  }
+
+  :root{
+    --ink:#111827;
+    --muted:#6B7280;
+    --line:#E5E7EB;
+    --accent:#111827;
+    --badge:#111827;
+    --badge-text:#ffffff;
+    --soft:#F9FAFB;
+  }
+
+  * { box-sizing: border-box; }
+  body { background:#f3f4f6; color:var(--ink); font:14px/1.35 "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Naskh Arabic UI", sans-serif; }
+  .invoice-box{
+    background:#fff; margin:auto; max-width:840px;
+    padding:24px 28px; border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 10px 25px rgba(0,0,0,.06);
+  }
+
+  .row{ display:flex; gap:16px; }
+  .col{ flex:1; }
+
+  /* ==== HEADER ==== */
+  .header{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:8px;
+  }
+  .brand h1{ margin:0; font-size:28px; letter-spacing:.5px; }
+  .brand .sub{ margin:4px 0 0; color:var(--muted); font-size:12px; }
+  .badge{
+    align-self:flex-start; background:var(--badge); color:var(--badge-text);
+    padding:6px 12px; border-radius:999px; font-weight:700; letter-spacing:.5px; font-size:12px;
+  }
+
+  .meta{
+    margin-top:6px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; min-width:280px;
+  }
+  .meta table{ width:100%; border-collapse:collapse; }
+  .meta td{ padding:4px 0; vertical-align:top; }
+  .meta td:first-child{ color:var(--muted); width:42%; }
+
+  hr.rule{ border:none; border-top:1px solid var(--line); margin:14px 0; }
+
+  /* ==== BILL TO + BANK BOX ==== */
+  .panels{ display:flex; gap:14px; margin-bottom:10px; }
+  .panel{
+    flex:1; border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--soft);
+  }
+  .panel h3{ margin:0 0 6px; font-size:13px; letter-spacing:.4px; color:var(--muted); text-transform:uppercase; }
+  .panel p{ margin:4px 0; }
+
+  .bank{
+    background:#fff;
+    border:1px dashed var(--ink);
+  }
+  .bank strong{ font-size:13px; }
+
+  /* ==== DISCOUNT RIBBON ==== */
+  .ribbon{
+    margin:6px 0 10px; padding:8px 12px; border:1px dashed var(--ink);
+    border-radius:8px; font-weight:700; text-align:center; letter-spacing:.4px;
+  }
+
+  /* ==== TABLE ==== */
+  table.grid{ width:100%; border-collapse:collapse; }
+  .grid thead th{
+    font-size:12px; text-transform:uppercase; letter-spacing:.4px; padding:10px 8px;
+    border-bottom:2px solid var(--ink); text-align:left; white-space:nowrap;
+  }
+  .grid tbody td{
+    padding:8px 8px; border-bottom:1px solid var(--line); vertical-align:top;
+  }
+  .num{ text-align:right; font-variant-numeric: tabular-nums; }
+  .muted{ color:var(--muted); }
+  .desc{ width:40%; }
+
+  /* ==== TOTALS ==== */
+  .totals{
+    margin-top:12px; display:flex; justify-content:flex-end;
+  }
+  .totals .box{
+    width:360px; border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+  }
+  .totals table{ width:100%; border-collapse:collapse; }
+  .totals td{ padding:6px 0; }
+  .totals td:first-child{ color:var(--muted); }
+  .grand{
+    border-top:2px solid var(--ink); font-weight:800;
+  }
+
+  /* ==== FOOTER ==== */
+  .footer{
+    margin-top:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;
+  }
+  .thanks{ font-weight:700; }
+  .note{ color:var(--muted); font-size:12px; }
+
+  .actions{ margin-top:14px; display:flex; gap:8px; }
+  .btn{
+    border:1px solid var(--ink); background:#fff; padding:8px 12px; border-radius:8px; cursor:pointer;
+  }
+</style>
+
+<div class="invoice-box">
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <h1>{{ invoice.seller_name or 'M Hamid Traders' }}</h1>
+      <div class="sub">
+        {{ invoice.seller_address or 'Jamia Islamia Road Iqbal Nagar, Rahim Yar Khan' }} &nbsp;•&nbsp;
+        {{ invoice.seller_phone or '[0313-6557899]' }}
+      </div>
+    </div>
+    <div class="badge">BILL INVOICE</div>
+    <div class="meta">
+      <table>
+        <tr><td>Invoice #</td><td><strong>{{ invoice.id }}</strong></td></tr>
+        <tr><td>Date</td><td><strong>
+          {% if invoice.date and invoice.date.strftime is defined %}
+            {{ invoice.date.strftime('%d/%m/%Y') }}
+          {% else %}
+            {{ invoice.date }}
+          {% endif %}
+        </strong></td></tr>
+        <tr><td>Salesman</td><td>{{ invoice.salesman or '—' }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- Bill To + Bank -->
+  <div class="panels">
+    <div class="panel">
+      <h3>Bill To</h3>
+      <p><strong>{{ invoice.customer_name or 'FAMILY MART' }}</strong></p>
+      <p class="muted">{{ invoice.address or '' }}</p>
+      {% if invoice.city or invoice.postal_code %}
+      <p class="muted">{{ invoice.city or '' }} {{ invoice.postal_code or '' }}</p>
+      {% endif %}
+    </div>
+
+    <!-- <div class="panel bank">
+      <h3>For Online Payments</h3>
+      <p><strong>{{ invoice.bank_name or 'BANK OF PUNJAB' }}</strong></p>
+      <p>IBAN: <strong>{{ invoice.iban or 'PK08BPUN5010287237300011' }}</strong></p>
+      {% if invoice.account_title %}<p>Account Title: <strong>{{ invoice.account_title }}</strong></p>{% endif %}
+    </div> -->
+  </div>
+
+  <!-- Discount Ribbon -->
+  <div class="ribbon">3% DISCOUNT APPLIED ON ALL SKU'S</div>
+
+  <!-- Items Table -->
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>Item #</th>
+        <th class="desc">Description</th>
+        <th class="num">Qty</th>
+        <th class="num">Bonus</th>
+        <th class="num">Unit Price</th>
+        <th class="num">TO</th>
+        <th class="num">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {# ---- FIX: use a namespace to accumulate reliably across the loop ---- #}
+      {% set ns = namespace(qty=0, bonus=0, to_sum=0.0, sub=0.0) %}
+
+      {% for item in invoice.items %}
+        {% set qty  = item.quantity   or 0 %}
+        {% set bonus = item.bonus or item.foc or 0 %}
+        {% set unit = item.unit_price or 0.0 %}
+        {% set to   = item.trade_offer or 0.0 %}
+        {% set line_total = (qty * unit) - to %}
+
+        {% set ns.qty   = ns.qty   + qty %}
+        {% set ns.bonus = ns.bonus + bonus %}
+        {% set ns.to_sum = ns.to_sum + to %}
+        {% set ns.sub   = ns.sub   + line_total %}
+
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="desc">{{ item.description }}</td>
+          <td class="num">{{ qty }}</td>
+          <td class="num">{{ bonus }}</td>
+          <td class="num">{{ '%.2f' % unit }}</td>
+          <td class="num">{{ '%.2f' % to }}</td>
+          <td class="num">{{ '%.2f' % line_total }}</td>
+        </tr>
+      {% endfor %}
+
+      <!-- Summary Row -->
+      <tr>
+        <td></td>
+        <td class="muted"><em>Totals</em></td>
+        <td class="num"><strong>{{ ns.qty }}</strong></td>
+        <td class="num"><strong>{{ ns.bonus }}</strong></td>
+        <td></td>
+        <td class="num"><strong>{{ '%.2f' % ns.to_sum }}</strong></td>
+        <td class="num"><strong>{{ '%.2f' % ns.sub }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Totals Box -->
+  {% set adv_tax = invoice.adv_tax or 0.0 %}
+  {% set flat_discount = invoice.discount or 0.0 %}
+  {% set tax_rate = invoice.tax_rate or 0.0 %}
+  {% set tax_amount = (ns.sub * tax_rate/100.0) %}
+  {% set grand = ns.sub + tax_amount + adv_tax - flat_discount %}
+
+  <div class="totals">
+    <div class="box">
+      <table>
+        <tr><td>Sub Total</td><td class="num">{{ '%.2f' % ns.sub }}</td></tr>
+        <tr><td>Trade Offer (TO)</td><td class="num">{{ '%.2f' % ns.to_sum }}</td></tr>
+        <tr><td>ADV Tax</td><td class="num">{{ '%.2f' % adv_tax }}</td></tr>
+        <tr><td>Flat Discount</td><td class="num">-{{ '%.2f' % flat_discount }}</td></tr>
+        <tr><td>Tax Rate</td><td class="num">{{ '%.2f' % tax_rate }}%</td></tr>
+        <tr class="grand"><td>Invoice Amount</td><td class="num">{{ '%.2f' % grand }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="thanks">Thank You For Your Business!</div>
+    <div class="note">نوٹ: سیلز مین کے ذمے لین دین کا ادارہ ذمہ دار نہ ہوگا۔ ادائیگی فوری کریں۔</div>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn" onclick="window.print()">Print</button>
+  </div>
+</div>
+{% endblock %}
